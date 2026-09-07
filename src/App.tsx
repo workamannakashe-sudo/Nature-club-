@@ -456,7 +456,7 @@ function ScrollSCurve({ isFuture = false, nodeCount, sectionRef, onNodeLit }: Sc
     const animate = () => {
       if (!active) return
       calculateTarget()
-      
+
       // Silk-smooth physics lerp interpolation
       const diff = targetProgressRef.current - currentProgressRef.current
       if (Math.abs(diff) > 0.0001) {
@@ -817,15 +817,15 @@ function LeadershipSection() {
             <div className="bento-card bento-card--admin">
               <div className="bento-card__avatar-badge">Advisor</div>
               <div className="bento-card__role">Faculty Advisor</div>
-              <h4 className="bento-card__name">Prof. Seema Rathod</h4>
+              <h4 className="bento-card__name">Prof.Sanjivani Harne</h4>
               <p className="bento-card__desc">Department of Applied Sciences &amp; Environmental Studies</p>
             </div>
 
             <div className="bento-card bento-card--admin">
               <div className="bento-card__avatar-badge">Incharge</div>
               <div className="bento-card__role">Club Incharge</div>
-              <h4 className="bento-card__name">Ms. Sanjivani Harne</h4>
-              <p className="bento-card__desc">Coordinator &amp; Student Welfare Officer, SCOET</p>
+              <h4 className="bento-card__name">Prof. Sanjivani Harne</h4>
+              <p className="bento-card__desc">Nature Club Incharge, SCOET</p>
             </div>
           </div>
         </div>
