@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 // ─── Data Types ───────────────────────────────────────────────────────────────
 export interface PastEvent {
@@ -22,6 +22,8 @@ export interface UpcomingEvent {
   tag: string
   desc: string
   isFlagship?: boolean
+  posterUrl?: string
+  posterCaption?: string
 }
 
 // ─── Past Events Data (from Official Presentation Archive) ─────────────────────
@@ -33,7 +35,7 @@ const PAST_EVENTS: PastEvent[] = [
     tag: 'Tree Revival & Distribution',
     date: 'August 2025',
     shortDesc: 'A massive tree revival, botanical care, and sapling adoption drive across campus perimeters and local ecosystems.',
-    successStory: 'Restored and distributed over 500 indigenous saplings with organic soil conditioning and student adoption pledges.',
+    successStory: 'Restored and distributed over 80+ indigenous saplings with organic soil conditioning and student adoption pledges.',
     photos: [
       '/club-assets/vriksha-1.png',
       '/club-assets/vriksha-2.png',
@@ -88,7 +90,7 @@ const PAST_EVENTS: PastEvent[] = [
     title: 'ECOTHON 5.O',
     tag: 'National Innovation Hackathon',
     date: 'April 2026',
-    shortDesc: 'High-energy 36-hour national hackathon engineering smart technical solutions for climate, solar, and waste challenges.',
+    shortDesc: 'High-energy 12-hour national hackathon engineering smart technical solutions for climate, solar, and waste challenges.',
     successStory: '60+ inter-college teams built working IoT water-monitoring sensors, solar tracking rigs, and circular economy models.',
     photos: [
       '/club-assets/ecothon-1.jpg',
@@ -102,7 +104,7 @@ const PAST_EVENTS: PastEvent[] = [
 const UPCOMING_EVENTS: UpcomingEvent[] = [
   {
     id: 'up-vasundhara',
-    num: '06 / 10',
+    num: '06 / 11',
     title: 'VASUNDHARA: The Cultural Feast',
     subtitle: 'Inter-College Eco-Drama, Poetry & Art Carnival',
     date: 'October 2026',
@@ -111,7 +113,7 @@ const UPCOMING_EVENTS: UpcomingEvent[] = [
   },
   {
     id: 'up-swachh-sankalp',
-    num: '07 / 10',
+    num: '07 / 11',
     title: 'SWACHH SANKALP: Cleanliness & Environmental Awareness',
     subtitle: 'Campus-wide Zero Waste Drive & Awareness Rally',
     date: 'November 2026',
@@ -119,17 +121,30 @@ const UPCOMING_EVENTS: UpcomingEvent[] = [
     desc: 'Mobilizing youth for zero-waste segregation, organic composting workshops, and community environmental awareness.',
   },
   {
+    id: 'up-nature-nexus',
+    num: '08 / 11',
+    title: 'NATURE NEXUS WORKSHOP: Reconnect with Nature',
+    subtitle: 'Mind Relaxation, Clean Mind & Tree Plantation Workshop',
+    date: 'Late November 2026',
+    tag: '🧘 Mind & Nature Workshop',
+    desc: 'A transformative workshop to reconnect with nature — focusing on mind relaxation, mental clarity, hands-on tree planting, exploring nature’s wonders, and learning new eco-skills.',
+    posterUrl: '/club-assets/nature-nexus-poster.jpg',
+    posterCaption: 'Official Nature Nexus Workshop Poster',
+  },
+  {
     id: 'up-trekking',
-    num: '08 / 10',
-    title: 'TREKKING: Connecting with Nature',
-    subtitle: 'Melghat Tiger Reserve Wilderness Trail',
+    num: '09 / 11',
+    title: 'ECO RHYTHM: Trekking & Nature Exploration',
+    subtitle: 'Reveal Soon',
     date: 'December 2026',
-    tag: 'Eco Trek & Camp',
-    desc: 'Guided wilderness expedition through pristine forest corridors to study local biodiversity, flora, and bird species.',
+    tag: '🥾 Eco Trek & Camp',
+    desc: 'Tracking Eco Rhythm — New Trails · New Experiences · Same Planet. Guided wilderness expedition featuring trekking adventures, nature exploration, eco-awareness, and lasting memories.',
+    posterUrl: '/club-assets/trekking-poster.jpg',
+    posterCaption: 'Official EcoRhythm Trekking Poster',
   },
   {
     id: 'up-yogathon',
-    num: '09 / 10',
+    num: '10 / 11',
     title: 'YOGATHON: Spreading The Importance of Yoga',
     subtitle: 'Mindfulness & Physical Vitality Marathon',
     date: 'January 2027',
@@ -138,12 +153,12 @@ const UPCOMING_EVENTS: UpcomingEvent[] = [
   },
   {
     id: 'up-ecothon-6',
-    num: '10 / 10',
+    num: '11 / 11',
     title: 'THE ECOTHON 6.0: The National Level HACKATHON of Sipna',
     subtitle: 'The Biggest Hackathon of Sipna College',
     date: 'March 2027',
     tag: '⭐ THE BIGGEST HACKATHON OF SIPNA COLLEGE',
-    desc: 'Flagship 48-hour national innovation hackathon with nationwide collegiate teams solving urgent environmental, EV, renewable energy, and circular economy challenges.',
+    desc: 'Flagship 12-hour national innovation hackathon with nationwide collegiate teams solving urgent environmental, EV, renewable energy, and circular economy challenges.',
     isFlagship: true,
   },
 ]
@@ -306,13 +321,93 @@ function Hero() {
   )
 }
 
+// ─── Component: Fullscreen Photo Lightbox Modal ───────────────────────────────
+export interface PhotoLightboxData {
+  url: string
+  title: string
+  caption?: string
+  photoIndex?: number
+  totalPhotos?: number
+  onPrev?: () => void
+  onNext?: () => void
+}
+
+interface PhotoLightboxModalProps {
+  photo: PhotoLightboxData | null
+  onClose: () => void
+}
+
+function PhotoLightboxModal({ photo, onClose }: PhotoLightboxModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft' && photo?.onPrev) photo.onPrev()
+      if (e.key === 'ArrowRight' && photo?.onNext) photo.onNext()
+    }
+    if (photo) {
+      window.addEventListener('keydown', handleKeyDown)
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [photo, onClose])
+
+  if (!photo) return null
+
+  return (
+    <div className="modal-backdrop photo-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="photo-modal-card" onClick={(e) => e.stopPropagation()}>
+        <button className="photo-modal-close" onClick={onClose} aria-label="Close full photo view">
+          ✕
+        </button>
+
+        {photo.onPrev && (
+          <button
+            className="photo-modal-nav photo-modal-nav--prev"
+            onClick={(e) => { e.stopPropagation(); photo.onPrev?.() }}
+            aria-label="Previous photo"
+            title="Previous photo (Left Arrow)"
+          >
+            ‹
+          </button>
+        )}
+
+        {photo.onNext && (
+          <button
+            className="photo-modal-nav photo-modal-nav--next"
+            onClick={(e) => { e.stopPropagation(); photo.onNext?.() }}
+            aria-label="Next photo"
+            title="Next photo (Right Arrow)"
+          >
+            ›
+          </button>
+        )}
+
+        <div className="photo-modal-img-frame">
+          <img src={photo.url} alt={photo.caption || photo.title} className="photo-modal-img" />
+        </div>
+
+        <div className="photo-modal-info">
+          <div className="photo-modal-header">
+            <span className="photo-modal-tag">🌿 ARCHIVE PHOTOGRAPH</span>
+            {photo.totalPhotos && photo.photoIndex !== undefined && (
+              <span className="photo-modal-counter">Photo {photo.photoIndex + 1} of {photo.totalPhotos}</span>
+            )}
+          </div>
+          <h3 className="photo-modal-title">{photo.title}</h3>
+          {photo.caption && <p className="photo-modal-caption">{photo.caption}</p>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Component: Archive / Field Note Modal Popup ──────────────────────────────
 interface EventModalProps {
   event: PastEvent | null
   onClose: () => void
+  onOpenPhoto: (event: PastEvent, photoIndex: number) => void
 }
 
-function EventModal({ event, onClose }: EventModalProps) {
+function EventModal({ event, onClose, onOpenPhoto }: EventModalProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -359,22 +454,36 @@ function EventModal({ event, onClose }: EventModalProps) {
                 <div className="field-note-card__status-label">ARCHIVE STATUS</div>
                 <div className="field-note-card__status-title">Two image story</div>
                 <div className="field-note-card__status-desc">
-                  Curated photographic records from the SCOET Natures Club live field logs.
+                  Curated photographic records from the SCOET Natures Club live field logs. Click pictures to view full size.
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Two Photographs */}
+          {/* Right Column: Two Photographs (Clickable for full picture) */}
           <div className="field-note-card__gallery">
             {event.photos.map((photo, i) => (
-              <div className="field-note-card__photo-frame" key={i}>
-                <img
-                  src={photo}
-                  alt={`${event.title} documentary snapshot ${i + 1}`}
-                  className="field-note-card__photo"
-                  loading="lazy"
-                />
+              <div
+                className="field-note-card__photo-frame"
+                key={i}
+                onClick={() => onOpenPhoto(event, i)}
+                role="button"
+                tabIndex={0}
+                aria-label={`View full picture: ${event.photoCaptions[i]}`}
+                title="Click to view full picture"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenPhoto(event, i) }}
+              >
+                <div className="field-note-card__photo-img-wrap">
+                  <img
+                    src={photo}
+                    alt={`${event.title} documentary snapshot ${i + 1}`}
+                    className="field-note-card__photo"
+                    loading="lazy"
+                  />
+                  <div className="field-note-card__photo-zoom-hint">
+                    <span>🔍 Full Picture</span>
+                  </div>
+                </div>
                 <div className="field-note-card__photo-label">
                   <span>PHOTO {i + 1}</span>
                   <span className="caption-text">{event.photoCaptions[i]}</span>
@@ -396,100 +505,187 @@ function EventModal({ event, onClose }: EventModalProps) {
   )
 }
 
-// ─── S-Curve Path (shared) ─────────────────────────────────────────────────────
-// Desktop: full S-sweep. Milestone Y-positions (in 0–1000 viewBox units):
-// Node 0 → y≈100, Node 1 → y≈300, Node 2 → y≈500, Node 3 → y≈700, Node 4 → y≈900
-const S_PATH_D = "M 200 0 C 310 40, 290 70, 200 100 C 60 160, 60 240, 200 300 C 340 360, 340 440, 200 500 C 60 560, 60 640, 200 700 C 340 760, 340 840, 200 900 C 200 950, 200 980, 200 1000"
-// Approximate fractional positions of each node along the total path length
-const NODE_FRACTIONS = [0.1, 0.3, 0.5, 0.7, 0.9]
+// ─── Dynamic S-Curve Path Generator ───────────────────────────────────────────
+// Generates SVG path 'd' string that dynamically sweeps through EVERY node center
+// by measuring real DOM positions or using exact fractions.
+function computeSPath(timelineEl: HTMLElement | null, count: number): { pathD: string; nodeFractions: number[] } {
+  const c = Math.max(count, 1)
+  const viewBoxHeight = 1000
+  const centerX = 200
+  const rightX = 330
+  const leftX = 70
+
+  let nodeYs: number[] = []
+  if (timelineEl) {
+    const nodes = Array.from(timelineEl.querySelectorAll('.scurve-item__node')) as HTMLElement[]
+    const timelineRect = timelineEl.getBoundingClientRect()
+    if (nodes.length === c && timelineRect.height > 0) {
+      nodeYs = nodes.map(node => {
+        const nodeRect = node.getBoundingClientRect()
+        const relativeY = (nodeRect.top + nodeRect.height / 2) - timelineRect.top
+        return Math.max(25, Math.min(viewBoxHeight - 25, (relativeY / timelineRect.height) * viewBoxHeight))
+      })
+    }
+  }
+
+  // Fallback: perfectly distributed
+  if (nodeYs.length !== c) {
+    nodeYs = Array.from({ length: c }, (_, i) => ((i + 0.5) / c) * viewBoxHeight)
+  }
+
+  let pathD = `M ${centerX} 0`
+  const y0 = nodeYs[0]
+  pathD += ` C ${centerX} ${y0 * 0.4}, ${centerX} ${y0 * 0.8}, ${centerX} ${y0}`
+
+  for (let i = 0; i < c - 1; i++) {
+    const yStart = nodeYs[i]
+    const yEnd = nodeYs[i + 1]
+    const swingX = i % 2 === 0 ? rightX : leftX
+    pathD += ` C ${swingX} ${yStart + (yEnd - yStart) * 0.35}, ${swingX} ${yStart + (yEnd - yStart) * 0.65}, ${centerX} ${yEnd}`
+  }
+
+  const yLast = nodeYs[c - 1]
+  const rem = viewBoxHeight - yLast
+  pathD += ` C ${centerX} ${yLast + rem * 0.4}, ${centerX} ${yLast + rem * 0.8}, ${centerX} ${viewBoxHeight}`
+
+  const nodeFractions = nodeYs.map(y => y / viewBoxHeight)
+  return { pathD, nodeFractions }
+}
 
 // ─── Component: Scroll-Driven Draw-On S-Curve ──────────────────────────────────
 interface ScrollSCurveProps {
   isFuture?: boolean
   nodeCount: number
   sectionRef: React.RefObject<HTMLElement | null>
-  onNodeLit: (index: number) => void
+  onLitChange: (litStates: boolean[]) => void
 }
 
-function ScrollSCurve({ isFuture = false, nodeCount, sectionRef, onNodeLit }: ScrollSCurveProps) {
+function ScrollSCurve({ isFuture = false, nodeCount, sectionRef, onLitChange }: ScrollSCurveProps) {
   const pathRef = useRef<SVGPathElement>(null)
   const glowPathRef = useRef<SVGPathElement>(null)
+  const [pathData, setPathData] = useState(() => computeSPath(null, nodeCount))
   const litRef = useRef<boolean[]>(Array(nodeCount).fill(false))
-  const targetProgressRef = useRef<number>(0)
-  const currentProgressRef = useRef<number>(0)
+  const smoothRef = useRef<number>(0)
+  const rafRef = useRef<number>(0)
+  const onLitChangeRef = useRef(onLitChange)
+  onLitChangeRef.current = onLitChange
+
+  const updateGeometry = useCallback(() => {
+    const section = sectionRef.current
+    if (!section) return
+    const timelineEl = (section.querySelector('.scurve-timeline') as HTMLElement) || section
+    const newPath = computeSPath(timelineEl, nodeCount)
+    setPathData(newPath)
+  }, [sectionRef, nodeCount])
+
+  useEffect(() => {
+    updateGeometry()
+    const timer = setTimeout(updateGeometry, 200)
+    window.addEventListener('resize', updateGeometry, { passive: true })
+
+    const section = sectionRef.current
+    let resizeObserver: ResizeObserver | null = null
+    if (section && typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => updateGeometry())
+      resizeObserver.observe(section)
+    }
+
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('resize', updateGeometry)
+      if (resizeObserver) resizeObserver.disconnect()
+    }
+  }, [updateGeometry, sectionRef])
 
   const gradientId = isFuture ? 'sCurveGradFuture' : 'sCurveGradPast'
   const glowFilterId = isFuture ? 'sCurveGlowFilterFuture' : 'sCurveGlowFilterPast'
 
   useEffect(() => {
-    litRef.current = Array(nodeCount).fill(false)
-  }, [nodeCount])
-
-  useEffect(() => {
     const path = pathRef.current
+    const glowPath = glowPathRef.current
     if (!path) return
 
-    const totalLen = path.getTotalLength()
-    path.style.strokeDasharray = `${totalLen}`
-    path.style.strokeDashoffset = `${totalLen}`
-    if (glowPathRef.current) {
-      glowPathRef.current.style.strokeDasharray = `${totalLen}`
-      glowPathRef.current.style.strokeDashoffset = `${totalLen}`
+    let totalLen = path.getTotalLength()
+    const updateDashArrays = () => {
+      totalLen = path.getTotalLength()
+      if (totalLen > 0) {
+        path.style.strokeDasharray = `${totalLen}`
+        if (glowPath) glowPath.style.strokeDasharray = `${totalLen}`
+      }
+    }
+    updateDashArrays()
+
+    const getTargetProgress = () => {
+      const section = sectionRef.current
+      if (!section) return 0
+      const timelineEl = (section.querySelector('.scurve-timeline') as HTMLElement) || section
+      const rect = timelineEl.getBoundingClientRect()
+      const vh = window.innerHeight
+
+      // Optimal focus viewport line (60% down the screen)
+      const focusY = vh * 0.60
+      const scrolled = focusY - rect.top
+      const total = rect.height
+      if (total <= 0) return 0
+
+      return Math.min(Math.max(scrolled / total, 0), 1)
     }
 
     let active = true
 
-    const calculateTarget = () => {
-      const section = sectionRef.current
-      if (!section) return
-      const rect = section.getBoundingClientRect()
-      const vh = window.innerHeight
-      // Smooth start when section enters viewport, finish when passing bottom
-      const start = rect.top - vh * 0.85
-      const end = rect.bottom - vh * 0.3
-      const range = Math.max(end - start, 1)
-      const scrolled = -start
-      const raw = Math.min(Math.max(scrolled / range, 0), 1)
-      targetProgressRef.current = raw
-    }
-
-    const animate = () => {
+    const tick = () => {
       if (!active) return
-      calculateTarget()
 
-      // Silk-smooth physics lerp interpolation
-      const diff = targetProgressRef.current - currentProgressRef.current
-      if (Math.abs(diff) > 0.0001) {
-        currentProgressRef.current += diff * 0.1
+      const target = getTargetProgress()
+      const diff = target - smoothRef.current
+
+      // Responsive lerp factor (0.22) for instant, silky tracking scrolling down AND up
+      if (Math.abs(diff) > 0.0002) {
+        smoothRef.current += diff * 0.22
       } else {
-        currentProgressRef.current = targetProgressRef.current
+        smoothRef.current = target
       }
 
-      const cur = currentProgressRef.current
+      const cur = smoothRef.current
       const offset = totalLen * (1 - cur)
       path.style.strokeDashoffset = `${offset}`
-      if (glowPathRef.current) {
-        glowPathRef.current.style.strokeDashoffset = `${offset}`
+      if (glowPath) {
+        glowPath.style.strokeDashoffset = `${offset}`
       }
 
-      // Light up nodes based on smoothed progress
-      NODE_FRACTIONS.slice(0, nodeCount).forEach((frac, i) => {
-        if (!litRef.current[i] && cur >= frac - 0.02) {
-          litRef.current[i] = true
-          onNodeLit(i)
+      // Bidirectional node lighting with hysteresis
+      // Lights when line reaches node (cur >= frac - 0.015)
+      // Unlights smoothly when line retracts above node (cur < frac - 0.035)
+      const fracs = pathData.nodeFractions
+      const currentLit = [...litRef.current]
+      let changed = false
+
+      fracs.forEach((frac, i) => {
+        const isCurrentlyLit = currentLit[i]
+        if (!isCurrentlyLit && cur >= frac - 0.015) {
+          currentLit[i] = true
+          changed = true
+        } else if (isCurrentlyLit && cur < frac - 0.035) {
+          currentLit[i] = false
+          changed = true
         }
       })
 
-      requestAnimationFrame(animate)
+      if (changed) {
+        litRef.current = currentLit
+        onLitChangeRef.current(currentLit)
+      }
+
+      rafRef.current = requestAnimationFrame(tick)
     }
 
-    const animationId = requestAnimationFrame(animate)
+    rafRef.current = requestAnimationFrame(tick)
 
     return () => {
       active = false
-      cancelAnimationFrame(animationId)
+      cancelAnimationFrame(rafRef.current)
     }
-  }, [sectionRef, nodeCount, onNodeLit])
+  }, [sectionRef, pathData])
 
   return (
     <div className="scurve-svg-wrap" aria-hidden="true">
@@ -499,61 +695,67 @@ function ScrollSCurve({ isFuture = false, nodeCount, sectionRef, onNodeLit }: Sc
         preserveAspectRatio="none"
       >
         <defs>
+          {/* Vibrant gradient — bright lime → vivid green for past, lime → gold → amber for future */}
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
             {isFuture ? (
               <>
-                <stop offset="0%" stopColor="#a3e635" stopOpacity="0.6" />
-                <stop offset="40%" stopColor="#f4c842" stopOpacity="1" />
-                <stop offset="70%" stopColor="#f39c12" stopOpacity="1" />
-                <stop offset="100%" stopColor="#e67e22" stopOpacity="0.7" />
+                <stop offset="0%" stopColor="#d4fc79" stopOpacity="0.85" />
+                <stop offset="25%" stopColor="#f9ca24" stopOpacity="1" />
+                <stop offset="60%" stopColor="#f0932b" stopOpacity="1" />
+                <stop offset="100%" stopColor="#e55039" stopOpacity="0.85" />
               </>
             ) : (
               <>
-                <stop offset="0%" stopColor="#a3e635" stopOpacity="0.7" />
-                <stop offset="40%" stopColor="#2ecc71" stopOpacity="1" />
-                <stop offset="70%" stopColor="#27ae60" stopOpacity="1" />
-                <stop offset="100%" stopColor="#1e824c" stopOpacity="0.6" />
+                <stop offset="0%" stopColor="#c6f135" stopOpacity="0.9" />
+                <stop offset="35%" stopColor="#00e676" stopOpacity="1" />
+                <stop offset="70%" stopColor="#00c853" stopOpacity="1" />
+                <stop offset="100%" stopColor="#1b5e20" stopOpacity="0.8" />
               </>
             )}
           </linearGradient>
 
-          <filter id={glowFilterId} x="-30%" y="-5%" width="160%" height="110%">
-            <feGaussianBlur stdDeviation="6" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          {/* Soft wide outer glow */}
+          <filter id={`${glowFilterId}_soft`} x="-60%" y="-5%" width="220%" height="110%">
+            <feGaussianBlur stdDeviation="14" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+
+          {/* Crisp inner glow */}
+          <filter id={glowFilterId} x="-35%" y="-5%" width="170%" height="110%">
+            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
 
-        {/* Ghost track — always visible, faint */}
+        {/* Ghost rail — always visible, whisper faint */}
         <path
-          d={S_PATH_D}
-          stroke={isFuture ? 'rgba(244,200,66,0.08)' : 'rgba(46,204,113,0.08)'}
-          strokeWidth="14"
+          d={pathData.pathD}
+          stroke={isFuture ? 'rgba(249,202,36,0.07)' : 'rgba(0,230,118,0.07)'}
+          strokeWidth="18"
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
-        {/* Glow halo — animated draw-on */}
+        {/* Wide soft glow halo — animated draw-on */}
         <path
-          ref={glowPathRef}
-          d={S_PATH_D}
-          stroke={isFuture ? 'rgba(244,200,66,0.28)' : 'rgba(46,204,113,0.28)'}
-          strokeWidth="12"
+          d={pathData.pathD}
+          stroke={isFuture ? 'rgba(240,147,43,0.18)' : 'rgba(0,200,83,0.18)'}
+          strokeWidth="22"
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
+          filter={`url(#${glowFilterId}_soft)`}
+          ref={glowPathRef}
           style={{ willChange: 'stroke-dashoffset' }}
         />
 
-        {/* Main draw-on path */}
+        {/* Main crisp draw-on line */}
         <path
           ref={pathRef}
-          d={S_PATH_D}
+          d={pathData.pathD}
           stroke={`url(#${gradientId})`}
-          strokeWidth="3.5"
+          strokeWidth="4.5"
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -565,17 +767,33 @@ function ScrollSCurve({ isFuture = false, nodeCount, sectionRef, onNodeLit }: Sc
   )
 }
 
+// ─── Helper: Structured Timeline Title Formatter ──────────────────────────────
+function renderTimelineTitle(title: string, isFlagship?: boolean) {
+  if (title.includes(':')) {
+    const [mainPart, ...rest] = title.split(':')
+    const subPart = rest.join(':').trim()
+    return (
+      <span className={`scurve-item__title-group ${isFlagship ? 'scurve-item__title-group--flagship' : ''}`}>
+        <span className="scurve-item__title-main">{mainPart.trim()}</span>
+        <span className="scurve-item__title-sub">{subPart}</span>
+      </span>
+    )
+  }
+  return <span>{title}</span>
+}
+
 // ─── Component: The Journey (Past Events S-Curve Timeline) ─────────────────────
-function JourneySection({ onSelectEvent }: { onSelectEvent: (event: PastEvent) => void }) {
+interface JourneySectionProps {
+  onSelectEvent: (event: PastEvent) => void
+  onOpenPhoto: (event: PastEvent, photoIndex: number) => void
+}
+
+function JourneySection({ onSelectEvent, onOpenPhoto }: JourneySectionProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const [litNodes, setLitNodes] = useState<boolean[]>(Array(PAST_EVENTS.length).fill(false))
 
-  const handleNodeLit = (index: number) => {
-    setLitNodes(prev => {
-      const next = [...prev]
-      next[index] = true
-      return next
-    })
+  const handleLitChange = (newLit: boolean[]) => {
+    setLitNodes(newLit)
   }
 
   return (
@@ -605,7 +823,7 @@ function JourneySection({ onSelectEvent }: { onSelectEvent: (event: PastEvent) =
             isFuture={false}
             nodeCount={PAST_EVENTS.length}
             sectionRef={sectionRef}
-            onNodeLit={handleNodeLit}
+            onLitChange={handleLitChange}
           />
 
           <div className="scurve-timeline__items">
@@ -620,7 +838,7 @@ function JourneySection({ onSelectEvent }: { onSelectEvent: (event: PastEvent) =
                   {/* Left (or Right) Title & Date Side */}
                   <div className={`scurve-item__title-col ${isLit ? 'scurve-item__title-col--lit' : ''}`}>
                     <div className="scurve-item__num">{event.num}</div>
-                    <h3 className="scurve-item__heading">{event.title}</h3>
+                    <h3 className="scurve-item__heading">{renderTimelineTitle(event.title)}</h3>
                     <div className="scurve-item__tag-pill">{event.tag}</div>
                     <div className="scurve-item__date">{event.date}</div>
                   </div>
@@ -654,12 +872,35 @@ function JourneySection({ onSelectEvent }: { onSelectEvent: (event: PastEvent) =
                         <strong>Impact:</strong> {event.successStory}
                       </div>
 
-                      {/* Photo Thumbnail Previews */}
+                      {/* Photo Thumbnail Previews (Clickable for full picture) */}
                       <div className="glass-card__thumbs">
-                        <img src={event.photos[0]} alt="Snapshot 1" loading="lazy" />
-                        <img src={event.photos[1]} alt="Snapshot 2" loading="lazy" />
+                        {event.photos.map((photo, pIdx) => (
+                          <div
+                            key={pIdx}
+                            className="glass-card__thumb-wrap"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onOpenPhoto(event, pIdx)
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`View full picture ${pIdx + 1} for ${event.title}`}
+                            title={`Click to view full picture: ${event.photoCaptions[pIdx]}`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.stopPropagation()
+                                onOpenPhoto(event, pIdx)
+                              }
+                            }}
+                          >
+                            <img src={photo} alt={`${event.title} snapshot ${pIdx + 1}`} loading="lazy" />
+                            <div className="glass-card__thumb-zoom">
+                              <span>🔍 View Full</span>
+                            </div>
+                          </div>
+                        ))}
                         <div className="glass-card__thumbs-cta">
-                          <span>View 2 Photos &amp; Story ↗</span>
+                          <span>View 2 Photos &amp; Field Note ↗</span>
                         </div>
                       </div>
                     </div>
@@ -674,112 +915,174 @@ function JourneySection({ onSelectEvent }: { onSelectEvent: (event: PastEvent) =
   )
 }
 
+// ─── Component: Poster Lightbox Modal ──────────────────────────────────────────
+interface PosterModalProps {
+  poster: { url: string; title: string; subtitle?: string } | null
+  onClose: () => void
+}
+
+function PosterModal({ poster, onClose }: PosterModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    if (poster) {
+      window.addEventListener('keydown', handleKeyDown)
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [poster, onClose])
+
+  if (!poster) return null
+
+  return (
+    <div className="modal-backdrop poster-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="poster-modal-card" onClick={(e) => e.stopPropagation()}>
+        <button className="poster-modal-close" onClick={onClose} aria-label="Close poster preview">
+          ✕
+        </button>
+
+        <div className="poster-modal-img-frame">
+          <img src={poster.url} alt={poster.title} className="poster-modal-img" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Component: What Next (Upcoming Events S-Curve Roadmap) ───────────────────
 function WhatNextSection() {
   const sectionRef = useRef<HTMLElement>(null)
   const [litNodes, setLitNodes] = useState<boolean[]>(Array(UPCOMING_EVENTS.length).fill(false))
+  const [selectedPoster, setSelectedPoster] = useState<{ url: string; title: string; subtitle?: string } | null>(null)
 
-  const handleNodeLit = (index: number) => {
-    setLitNodes(prev => {
-      const next = [...prev]
-      next[index] = true
-      return next
-    })
+  const handleLitChange = (newLit: boolean[]) => {
+    setLitNodes(newLit)
   }
 
   return (
-    <section className="section-s what-next-section" id="what-next" ref={sectionRef}>
-      <div className="section-watermark-logo section-watermark-logo--gold" aria-hidden="true" />
-      <div className="container">
-        {/* Section Header */}
-        <div className="section-header-grid">
-          <div className="section-header-left">
-            <div className="timeline-eyebrow timeline-eyebrow--lime">02 / THE HORIZON</div>
-            <h2 className="section-hero-title">
-              What <span className="title-serif-italic">next?</span>
-            </h2>
+    <>
+      <section className="section-s what-next-section" id="what-next" ref={sectionRef}>
+        <div className="section-watermark-logo section-watermark-logo--gold" aria-hidden="true" />
+        <div className="container">
+          {/* Section Header */}
+          <div className="section-header-grid">
+            <div className="section-header-left">
+              <div className="timeline-eyebrow timeline-eyebrow--lime">02 / THE HORIZON</div>
+              <h2 className="section-hero-title">
+                What <span className="title-serif-italic">next?</span>
+              </h2>
+            </div>
+            <div className="section-header-right">
+              <p className="section-hero-desc">
+                The next chapter is not waiting to be written. It is already taking shape in the hands, ideas, and energy of our students.
+              </p>
+              <div className="section-scroll-cta">The future is local</div>
+            </div>
           </div>
-          <div className="section-header-right">
-            <p className="section-hero-desc">
-              The next chapter is not waiting to be written. It is already taking shape in the hands, ideas, and energy of our students.
-            </p>
-            <div className="section-scroll-cta">The future is local</div>
-          </div>
-        </div>
 
-        {/* Roadmap Items */}
-        <div className="scurve-timeline">
-          {/* Scroll-Driven Draw-On SVG Path */}
-          <ScrollSCurve
-            isFuture={true}
-            nodeCount={UPCOMING_EVENTS.length}
-            sectionRef={sectionRef}
-            onNodeLit={handleNodeLit}
-          />
+          {/* Roadmap Items */}
+          <div className="scurve-timeline">
+            {/* Scroll-Driven Draw-On SVG Path */}
+            <ScrollSCurve
+              isFuture={true}
+              nodeCount={UPCOMING_EVENTS.length}
+              sectionRef={sectionRef}
+              onLitChange={handleLitChange}
+            />
 
-          <div className="scurve-timeline__items">
-            {UPCOMING_EVENTS.map((event, idx) => {
-              const isEven = idx % 2 === 1
-              const isLit = litNodes[idx]
-              return (
-                <div
-                  key={event.id}
-                  className={`scurve-item ${isEven ? 'scurve-item--reverse' : ''} ${event.isFlagship ? 'scurve-item--flagship' : ''}`}
-                >
-                  {/* Title Side */}
-                  <div className={`scurve-item__title-col ${isLit ? 'scurve-item__title-col--lit' : ''}`}>
-                    <div className="scurve-item__num scurve-item__num--gold">{event.num}</div>
-                    <h3 className={`scurve-item__heading ${event.isFlagship ? 'scurve-item__heading--flagship' : ''}`}>
-                      {event.title}
-                    </h3>
-                    <div className={`scurve-item__tag-pill ${event.isFlagship ? 'tag-flagship' : ''}`}>
-                      {event.tag}
+            <div className="scurve-timeline__items">
+              {UPCOMING_EVENTS.map((event, idx) => {
+                const isEven = idx % 2 === 1
+                const isLit = litNodes[idx]
+                return (
+                  <div
+                    key={event.id}
+                    className={`scurve-item ${isEven ? 'scurve-item--reverse' : ''} ${event.isFlagship ? 'scurve-item--flagship' : ''}`}
+                  >
+                    {/* Title Side */}
+                    <div className={`scurve-item__title-col ${isLit ? 'scurve-item__title-col--lit' : ''}`}>
+                      <div className="scurve-item__num scurve-item__num--gold">{event.num}</div>
+                      <h3 className={`scurve-item__heading ${event.isFlagship ? 'scurve-item__heading--flagship' : ''}`}>
+                        {renderTimelineTitle(event.title, event.isFlagship)}
+                      </h3>
+                      <div className={`scurve-item__tag-pill ${event.isFlagship ? 'tag-flagship' : ''}`}>
+                        {event.tag}
+                      </div>
+                      <div className="scurve-item__date scurve-item__date--gold">
+                        🗓️ {event.date}
+                      </div>
                     </div>
-                    <div className="scurve-item__date scurve-item__date--gold">
-                      🗓️ {event.date}
-                    </div>
-                  </div>
 
-                  {/* Central Node */}
-                  <div className={`scurve-item__node scurve-item__node--future ${isLit ? 'scurve-item__node--lit scurve-item__node--lit-gold' : ''}`}>
-                    <div className={`scurve-item__node-pulse ${event.isFlagship ? 'pulse-flagship' : ''}`} />
-                    <div className="scurve-item__node-dot">
-                      {event.isFlagship ? '⚡' : '🌱'}
+                    {/* Central Node */}
+                    <div className={`scurve-item__node scurve-item__node--future ${isLit ? 'scurve-item__node--lit scurve-item__node--lit-gold' : ''}`}>
+                      <div className={`scurve-item__node-pulse ${event.isFlagship ? 'pulse-flagship' : ''}`} />
+                      <div className="scurve-item__node-dot">
+                        {event.isFlagship ? '⚡' : '🌱'}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Description Card Side */}
-                  <div className={`scurve-item__card-col ${isLit ? 'scurve-item__card-col--lit' : ''}`}>
-                    <div className={`glass-card scurve-item__card ${event.isFlagship ? 'glass-card--flagship' : ''}`}>
-                      {event.isFlagship && (
-                        <div className="flagship-badge">
-                          🔥 THE BIGGEST HACKATHON OF SIPNA COLLEGE
+                    {/* Description Card Side */}
+                    <div className={`scurve-item__card-col ${isLit ? 'scurve-item__card-col--lit' : ''}`}>
+                      <div className={`glass-card scurve-item__card ${event.isFlagship ? 'glass-card--flagship' : ''}`}>
+                        {event.isFlagship && (
+                          <div className="flagship-badge">
+                            🔥 THE BIGGEST HACKATHON OF SIPNA COLLEGE
+                          </div>
+                        )}
+                        <h4 className="glass-card__subtitle">{event.subtitle}</h4>
+                        <p className="glass-card__desc">{event.desc}</p>
+
+                        {/* Interactive Poster Banner if Available */}
+                        {event.posterUrl && (
+                          <div
+                            className="event-poster-card"
+                            onClick={() => setSelectedPoster({ url: event.posterUrl!, title: event.title, subtitle: event.subtitle })}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`View official announcement poster for ${event.title}`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                setSelectedPoster({ url: event.posterUrl!, title: event.title, subtitle: event.subtitle })
+                              }
+                            }}
+                          >
+                            <img
+                              src={event.posterUrl}
+                              alt={`${event.title} Official Poster`}
+                              className="event-poster-card__img"
+                              loading="lazy"
+                            />
+                            <div className="event-poster-card__overlay">
+                              <span className="event-poster-card__badge">🎨 View Official Poster ↗</span>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="glass-card__action-row">
+                          <a
+                            href="#join"
+                            className={`btn-pill btn-pill--sm ${event.isFlagship ? 'btn-pill--gold' : 'btn-pill--primary'}`}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              document.getElementById('join')?.scrollIntoView({ behavior: 'smooth' })
+                            }}
+                          >
+                            {event.isFlagship ? 'Register for Ecothon 6.0 ⚡' : 'Notify Me Upon Opening 🔔'}
+                          </a>
                         </div>
-                      )}
-                      <h4 className="glass-card__subtitle">{event.subtitle}</h4>
-                      <p className="glass-card__desc">{event.desc}</p>
-
-                      <div className="glass-card__action-row">
-                        <a
-                          href="#join"
-                          className={`btn-pill btn-pill--sm ${event.isFlagship ? 'btn-pill--gold' : 'btn-pill--primary'}`}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            document.getElementById('join')?.scrollIntoView({ behavior: 'smooth' })
-                          }}
-                        >
-                          {event.isFlagship ? 'Register for Ecothon 6.0 ⚡' : 'Notify Me Upon Opening 🔔'}
-                        </a>
                       </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Poster Lightbox Modal */}
+      <PosterModal poster={selectedPoster} onClose={() => setSelectedPoster(null)} />
+    </>
   )
 }
 
@@ -815,80 +1118,79 @@ function LeadershipSection() {
             </div>
 
             <div className="bento-card bento-card--admin">
-              <div className="bento-card__avatar-badge">Advisor</div>
-              <div className="bento-card__role">Faculty Advisor</div>
-              <h4 className="bento-card__name">Prof.Sanjivani Harne</h4>
-              <p className="bento-card__desc">Department of Applied Sciences &amp; Environmental Studies</p>
-            </div>
-
-            <div className="bento-card bento-card--admin">
-              <div className="bento-card__avatar-badge">Incharge</div>
-              <div className="bento-card__role">Club Incharge</div>
+              <div className="bento-card__avatar-badge">Advisor &amp; Incharge</div>
+              <div className="bento-card__role">Faculty Advisor &amp; Club Incharge</div>
               <h4 className="bento-card__name">Prof. Sanjivani Harne</h4>
-              <p className="bento-card__desc">Nature Club Incharge, SCOET</p>
+              <p className="bento-card__desc">Faculty Advisor &amp; Nature Club Incharge · Department of Applied Sciences &amp; Environmental Studies, SCOET</p>
             </div>
           </div>
         </div>
 
         {/* Core Committee 2025-26 */}
         <div className="bento-section">
-          <h3 className="bento-tier-title">🌿 Nature Club Core Committee 2025-26</h3>
-          <div className="bento-grid bento-grid--core">
-            <div className="bento-card bento-card--lead bento-card--has-avatar">
+          <h3 className="bento-tier-title">🌿 Nature Club Core Committee 2026-27</h3>
+
+          {/* Top Leaders Row: President & Vice President highlighted in Green on top */}
+          <div className="bento-grid bento-grid--presidents">
+            <div className="bento-card bento-card--president bento-card--has-avatar">
               <div className="bento-card__avatar-wrap">
                 <img src="/club-assets/aditya-rathod.png" alt="Aditya Rathod" className="bento-card__avatar-img" />
               </div>
               <div className="bento-card__info">
-                <div className="bento-card__role-tag">President</div>
+                <div className="bento-card__role-tag bento-card__role-tag--green">President</div>
                 <h4 className="bento-card__name">Aditya Rathod</h4>
                 <p className="bento-card__desc">Head of Club Strategy &amp; Environmental Outreach</p>
               </div>
             </div>
 
-            <div className="bento-card bento-card--lead bento-card--has-avatar">
+            <div className="bento-card bento-card--president bento-card--has-avatar">
               <div className="bento-card__avatar-wrap">
                 <img src="/club-assets/krutika-bonde.png" alt="Krutika Bonde" className="bento-card__avatar-img" />
               </div>
               <div className="bento-card__info">
-                <div className="bento-card__role-tag">Vice President</div>
+                <div className="bento-card__role-tag bento-card__role-tag--green">Vice President</div>
                 <h4 className="bento-card__name">Krutika Bonde</h4>
                 <p className="bento-card__desc">Operations &amp; Student Drive Logistics</p>
               </div>
             </div>
+          </div>
 
-            <div className="bento-card bento-card--lead bento-card--has-avatar">
-              <div className="bento-card__avatar-wrap">
-                <img src="/club-assets/tanvi-rane.png" alt="Tanvi Rane" className="bento-card__avatar-img" />
-              </div>
-              <div className="bento-card__info">
-                <div className="bento-card__role-tag">Secretary</div>
-                <h4 className="bento-card__name">Tanvi Rane</h4>
-                <p className="bento-card__desc">Documentation, Liaison &amp; Event Coordination</p>
-              </div>
+          {/* Other Members Below */}
+          <div className="bento-grid bento-grid--core-members">
+            <div className="bento-card bento-card--slot">
+              <div className="bento-card__role-tag slot-tag">Secretary</div>
+              <h4 className="bento-card__name">Tanvi Rane</h4>
+              <p className="bento-card__desc">Documentation, Liaison &amp; Event Coordination</p>
             </div>
 
             <div className="bento-card bento-card--slot">
               <div className="bento-card__role-tag slot-tag">Treasurer</div>
-              <h4 className="bento-card__name">[To be updated]</h4>
+              <h4 className="bento-card__name">Swaraj Ingole</h4>
               <p className="bento-card__desc">Finance &amp; Resource Allocation</p>
             </div>
 
             <div className="bento-card bento-card--slot">
-              <div className="bento-card__role-tag slot-tag">Chief Executive Head</div>
-              <h4 className="bento-card__name">[To be updated]</h4>
-              <p className="bento-card__desc">Taskforce &amp; On-ground Execution</p>
+              <div className="bento-card__role-tag slot-tag">Technical Head</div>
+              <h4 className="bento-card__name">Sarthak Kulkarni</h4>
+              <p className="bento-card__desc">Web, Digital Platforms &amp; Tech Operations</p>
             </div>
 
             <div className="bento-card bento-card--slot">
               <div className="bento-card__role-tag slot-tag">Public Relations Officer (PRO)</div>
-              <h4 className="bento-card__name">[To be updated]</h4>
+              <h4 className="bento-card__name">Ayush Zode</h4>
               <p className="bento-card__desc">Media, Design &amp; Digital Communications</p>
             </div>
 
-            <div className="bento-card bento-card--slot bento-card--full-span">
-              <div className="bento-card__role-tag slot-tag">Executive Members</div>
-              <h4 className="bento-card__name">3 Positions [To be updated]</h4>
-              <p className="bento-card__desc">Active Taskforce for Hackathons, Field Treks &amp; Plantation Drives</p>
+            <div className="bento-card bento-card--slot">
+              <div className="bento-card__role-tag slot-tag">Executive Member</div>
+              <h4 className="bento-card__name">Kirkiti Chaudhari</h4>
+              <p className="bento-card__desc">Field Operations, Hackathons &amp; Event Logistics</p>
+            </div>
+
+            <div className="bento-card bento-card--slot">
+              <div className="bento-card__role-tag slot-tag">Executive Member</div>
+              <h4 className="bento-card__name">Sahil Markar</h4>
+              <p className="bento-card__desc">On-ground Taskforce &amp; Plantation Drives</p>
             </div>
           </div>
         </div>
@@ -897,9 +1199,66 @@ function LeadershipSection() {
   )
 }
 
+// ─── Component: QR Lightbox / Zoom Modal ──────────────────────────────────────
+interface QRModalProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+function QRModal({ isOpen, onClose }: QRModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown)
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
+
+  return (
+    <div className="modal-backdrop qr-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="qr-modal-card" onClick={(e) => e.stopPropagation()}>
+        <button className="qr-modal-close" onClick={onClose} aria-label="Close QR display">
+          ✕
+        </button>
+
+        <div className="qr-modal-badge">
+          <span>🌱</span> SIPNA SCOET NATURES CLUB
+        </div>
+
+        <h3 className="qr-modal-title">Scan to Register</h3>
+        <p className="qr-modal-subtitle">
+          Point any smartphone camera or QR scanner at the code below to open the official club registration form.
+        </p>
+
+        <div className="qr-modal-img-frame">
+          <img
+            src="/club-assets/qr-code.png"
+            alt="Natures Club Fullscreen Registration QR Code"
+            className="qr-modal-img"
+          />
+        </div>
+
+        <div className="qr-modal-footer">
+          <div className="qr-modal-hint">
+            <span className="pulse-dot" /> Official Membership Drive 2026-27
+          </div>
+          <button className="btn-pill btn-pill--dark" onClick={onClose}>
+            Done / Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Component: Join & Footer with Stylized QR Code ───────────────────────────
 function JoinSection() {
   const [copied, setCopied] = useState(false)
+  const [qrZoomed, setQrZoomed] = useState(false)
 
   const copyEmail = () => {
     navigator.clipboard.writeText('naturesclub@scoet.ac.in')
@@ -908,110 +1267,175 @@ function JoinSection() {
   }
 
   return (
-    <section className="section-s join-section" id="join">
-      <div className="container">
-        <div className="join-container">
-          <div className="join-card">
-            {/* Left Content */}
-            <div className="join-card__content">
-              <div className="join-leaf-badge">🌱</div>
-              <div className="timeline-eyebrow timeline-eyebrow--lime">04 / YOUR TURN</div>
-              <h2 className="section-hero-title section-hero-title--light">
-                Join the green <br /><span className="title-serif-italic title-serif-italic--lime">revolution.</span>
-              </h2>
-              <p className="join-card__desc">
-                Bring your questions, your energy, and your willingness to begin. The next good idea could start with you.
-              </p>
+    <>
+      <section className="section-s join-section" id="join">
+        <div className="container">
+          <div className="join-container">
+            <div className="join-card">
+              {/* Left Content */}
+              <div className="join-card__content">
+                <div className="join-leaf-badge">🌱</div>
+                <div className="timeline-eyebrow timeline-eyebrow--lime">04 / YOUR TURN</div>
+                <h2 className="section-hero-title section-hero-title--light">
+                  Join the green <br /><span className="title-serif-italic title-serif-italic--lime">revolution.</span>
+                </h2>
+                <p className="join-card__desc">
+                  Bring your questions, your energy, and your willingness to begin. The next good idea could start with you.
+                </p>
 
-              <div className="join-card__actions">
-                <a
-                  href="#hero"
-                  className="btn-pill btn-pill--cream"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                  }}
+                <div className="join-card__actions">
+                  <a
+                    href="#hero"
+                    className="btn-pill btn-pill--cream"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
+                  >
+                    Back to the beginning ↗
+                  </a>
+                  <button className="btn-pill btn-pill--ghost-cream" onClick={copyEmail}>
+                    {copied ? '✓ Email Copied!' : 'Copy Contact Email 📋'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Right: QR Code Scanner Card (Clickable to Expand) */}
+              <div className="join-card__qr-side">
+                <div
+                  className="qr-frame qr-frame--interactive"
+                  onClick={() => setQrZoomed(true)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Click to enlarge QR code for scanning"
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setQrZoomed(true) }}
                 >
-                  Back to the beginning ↗
-                </a>
-                <button className="btn-pill btn-pill--ghost-cream" onClick={copyEmail}>
-                  {copied ? '✓ Email Copied!' : 'Copy Contact Email 📋'}
-                </button>
-              </div>
-            </div>
+                  <div className="qr-frame__scanner-line" />
+                  <div className="qr-frame__corner qr-frame__corner--tl" />
+                  <div className="qr-frame__corner qr-frame__corner--tr" />
+                  <div className="qr-frame__corner qr-frame__corner--bl" />
+                  <div className="qr-frame__corner qr-frame__corner--br" />
 
-            {/* Right: Stylized Dotted QR Card */}
-            <div className="join-card__qr-side">
-              <div className="qr-dotted-frame">
-                <div className="qr-diamond-icon">🌱</div>
-                <div className="qr-reserved-tag">QR / SPACE RESERVED</div>
-                <p className="qr-reserved-desc">Official club registration link will live here.</p>
+                  <div className="qr-frame__img-wrap">
+                    <img
+                      src="/club-assets/qr-code.png"
+                      alt="Natures Club Registration QR Code"
+                      className="qr-img"
+                    />
+                    <div className="qr-zoom-overlay">
+                      <span>🔍 Tap to expand</span>
+                    </div>
+                  </div>
+
+                  <div className="qr-frame__label">
+                    <strong>SCAN TO JOIN THE CLUB</strong>
+                    <span>Click to enlarge QR for easy scanning 🔍</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Footer */}
+          <footer className="site-footer">
+            <div className="site-footer__top">
+              <div className="site-footer__brand">
+                <div className="site-footer__logo">🌿 Natures Club · SCOET</div>
+                <p className="site-footer__text">
+                  Sipna College of Engineering and Technology, Infront of Nemani Godown,
+                  Badnera Road, Amravati, Maharashtra 444701.
+                </p>
+              </div>
+
+              <div className="site-footer__nav-group">
+                <div className="site-footer__nav-title">Quick Links</div>
+                <ul className="site-footer__links">
+                  <li><a href="#home">Welcome</a></li>
+                  <li><a href="#journey">The Journey (Archive)</a></li>
+                  <li><a href="#what-next">What Next (Roadmap)</a></li>
+                  <li><a href="#people">Leadership Team</a></li>
+                </ul>
+              </div>
+
+              <div className="site-footer__nav-group">
+                <div className="site-footer__nav-title">Initiatives</div>
+                <ul className="site-footer__links">
+                  <li><a href="#what-next">Ecothon 6.0 Hackathon</a></li>
+                  <li><a href="#journey">Vrikshasanjivani</a></li>
+                  <li><a href="#journey">Vasundhara Earth Fest</a></li>
+                  <li><a href="#journey">Campus Green Canopy</a></li>
+                </ul>
+              </div>
+
+              <div className="site-footer__nav-group">
+                <div className="site-footer__nav-title">Contact &amp; Affiliation</div>
+                <ul className="site-footer__links">
+                  <li><a href="mailto:naturesclub@scoet.ac.in">naturesclub@scoet.ac.in</a></li>
+                  <li><a href="https://sipnaengg.ac.in" target="_blank" rel="noreferrer">sipnaengg.ac.in</a></li>
+                  <li><span>Amravati, Maharashtra, India</span></li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="site-footer__bottom">
+              <div>© 2026 Natures Club, Sipna College of Engineering &amp; Technology. All rights reserved.</div>
+              <div>Handcrafted with 💚 for Environmental Stewardship &amp; Conservation.</div>
+            </div>
+          </footer>
         </div>
+      </section>
 
-        {/* Footer */}
-        <footer className="site-footer">
-          <div className="site-footer__top">
-            <div className="site-footer__brand">
-              <div className="site-footer__logo">🌿 Natures Club · SCOET</div>
-              <p className="site-footer__text">
-                Sipna College of Engineering and Technology, Infront of Nemani Godown,
-                Badnera Road, Amravati, Maharashtra 444701.
-              </p>
-            </div>
-
-            <div className="site-footer__nav-group">
-              <div className="site-footer__nav-title">Quick Links</div>
-              <ul className="site-footer__links">
-                <li><a href="#home">Welcome</a></li>
-                <li><a href="#journey">The Journey (Archive)</a></li>
-                <li><a href="#what-next">What Next (Roadmap)</a></li>
-                <li><a href="#people">Leadership Team</a></li>
-              </ul>
-            </div>
-
-            <div className="site-footer__nav-group">
-              <div className="site-footer__nav-title">Initiatives</div>
-              <ul className="site-footer__links">
-                <li><a href="#what-next">Ecothon 6.0 Hackathon</a></li>
-                <li><a href="#journey">Vrikshasanjivani</a></li>
-                <li><a href="#journey">Vasundhara Earth Fest</a></li>
-                <li><a href="#journey">Campus Green Canopy</a></li>
-              </ul>
-            </div>
-
-            <div className="site-footer__nav-group">
-              <div className="site-footer__nav-title">Contact &amp; Affiliation</div>
-              <ul className="site-footer__links">
-                <li><a href="mailto:naturesclub@scoet.ac.in">naturesclub@scoet.ac.in</a></li>
-                <li><a href="https://sipnaengg.ac.in" target="_blank" rel="noreferrer">sipnaengg.ac.in</a></li>
-                <li><span>Amravati, Maharashtra, India</span></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="site-footer__bottom">
-            <div>© 2026 Natures Club, Sipna College of Engineering &amp; Technology. All rights reserved.</div>
-            <div>Handcrafted with 💚 for Environmental Stewardship &amp; Conservation.</div>
-          </div>
-        </footer>
-      </div>
-    </section>
+      {/* QR Fullscreen Lightbox Zoom Modal */}
+      <QRModal isOpen={qrZoomed} onClose={() => setQrZoomed(false)} />
+    </>
   )
 }
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [selectedEvent, setSelectedEvent] = useState<PastEvent | null>(null)
+  const [activePhoto, setActivePhoto] = useState<{
+    event: PastEvent
+    photoIndex: number
+  } | null>(null)
+
+  const handleOpenPhoto = (event: PastEvent, photoIndex: number) => {
+    setActivePhoto({ event, photoIndex })
+  }
+
+  const handlePrevPhoto = () => {
+    if (!activePhoto) return
+    const count = activePhoto.event.photos.length
+    const nextIdx = (activePhoto.photoIndex - 1 + count) % count
+    setActivePhoto({ event: activePhoto.event, photoIndex: nextIdx })
+  }
+
+  const handleNextPhoto = () => {
+    if (!activePhoto) return
+    const count = activePhoto.event.photos.length
+    const nextIdx = (activePhoto.photoIndex + 1) % count
+    setActivePhoto({ event: activePhoto.event, photoIndex: nextIdx })
+  }
+
+  const currentPhotoData: PhotoLightboxData | null = activePhoto ? {
+    url: activePhoto.event.photos[activePhoto.photoIndex],
+    title: activePhoto.event.title,
+    caption: activePhoto.event.photoCaptions[activePhoto.photoIndex],
+    photoIndex: activePhoto.photoIndex,
+    totalPhotos: activePhoto.event.photos.length,
+    onPrev: activePhoto.event.photos.length > 1 ? handlePrevPhoto : undefined,
+    onNext: activePhoto.event.photos.length > 1 ? handleNextPhoto : undefined,
+  } : null
 
   return (
     <div className="app-root">
       <Navbar />
       <main>
         <Hero />
-        <JourneySection onSelectEvent={setSelectedEvent} />
+        <JourneySection
+          onSelectEvent={setSelectedEvent}
+          onOpenPhoto={handleOpenPhoto}
+        />
         <WhatNextSection />
         <LeadershipSection />
         <JoinSection />
@@ -1021,6 +1445,13 @@ export default function App() {
       <EventModal
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
+        onOpenPhoto={handleOpenPhoto}
+      />
+
+      {/* Fullscreen Photo Lightbox Modal */}
+      <PhotoLightboxModal
+        photo={currentPhotoData}
+        onClose={() => setActivePhoto(null)}
       />
     </div>
   )
