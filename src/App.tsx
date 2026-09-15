@@ -163,14 +163,72 @@ const UPCOMING_EVENTS: UpcomingEvent[] = [
   },
 ]
 
+// ─── Component: Top Scroll Progress Bar ──────────────────────────────────────
+function ScrollProgressBar({ progress }: { progress: number }) {
+  return (
+    <div className="site-scroll-progress" aria-hidden="true">
+      <div
+        className="site-scroll-progress__bar"
+        style={{ transform: `scaleX(${progress})` }}
+      />
+    </div>
+  )
+}
+
+// ─── Component: Floating Back to Top Button ────────────────────────────────────
+function BackToTopButton({ visible, progress }: { visible: boolean; progress: number }) {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const radius = 18
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference * (1 - progress)
+
+  return (
+    <button
+      className={`back-to-top${visible ? ' back-to-top--visible' : ''}`}
+      onClick={scrollToTop}
+      aria-label="Scroll to top of page"
+      title="Back to top"
+    >
+      <svg className="back-to-top__ring" width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
+        <circle
+          className="back-to-top__ring-bg"
+          cx="23"
+          cy="23"
+          r={radius}
+          strokeWidth="3"
+        />
+        <circle
+          className="back-to-top__ring-fill"
+          cx="23"
+          cy="23"
+          r={radius}
+          strokeWidth="3"
+          style={{
+            strokeDasharray: circumference,
+            strokeDashoffset: strokeDashoffset,
+          }}
+        />
+      </svg>
+      <span className="back-to-top__icon" aria-hidden="true">↑</span>
+    </button>
+  )
+}
+
 // ─── Component: Navbar ────────────────────────────────────────────────────────
-function Navbar() {
+interface NavbarProps {
+  activeSection: string
+}
+
+function Navbar({ activeSection }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', onScroll)
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
@@ -202,10 +260,32 @@ function Navbar() {
           </a>
 
           <nav className="site-nav__menu">
-            <a href="#journey" className="site-nav__link" onClick={(e) => { e.preventDefault(); scrollTo('journey') }}>THE JOURNEY</a>
-            <a href="#what-next" className="site-nav__link" onClick={(e) => { e.preventDefault(); scrollTo('what-next') }}>WHAT NEXT</a>
-            <a href="#people" className="site-nav__link" onClick={(e) => { e.preventDefault(); scrollTo('people') }}>THE PEOPLE</a>
-            <a href="#join" className="site-nav__link site-nav__link--cta" onClick={(e) => { e.preventDefault(); scrollTo('join') }}>
+            <a
+              href="#journey"
+              className={`site-nav__link ${activeSection === 'journey' ? 'site-nav__link--active' : ''}`}
+              onClick={(e) => { e.preventDefault(); scrollTo('journey') }}
+            >
+              THE JOURNEY
+            </a>
+            <a
+              href="#what-next"
+              className={`site-nav__link ${activeSection === 'what-next' ? 'site-nav__link--active' : ''}`}
+              onClick={(e) => { e.preventDefault(); scrollTo('what-next') }}
+            >
+              WHAT NEXT
+            </a>
+            <a
+              href="#people"
+              className={`site-nav__link ${activeSection === 'people' ? 'site-nav__link--active' : ''}`}
+              onClick={(e) => { e.preventDefault(); scrollTo('people') }}
+            >
+              THE PEOPLE
+            </a>
+            <a
+              href="#join"
+              className={`site-nav__link site-nav__link--cta ${activeSection === 'join' ? 'site-nav__link--active-cta' : ''}`}
+              onClick={(e) => { e.preventDefault(); scrollTo('join') }}
+            >
               JOIN THE CLUB <span className="arrow-icon">↗</span>
             </a>
           </nav>
@@ -223,10 +303,32 @@ function Navbar() {
       {/* Mobile Drawer */}
       <div className={`mobile-drawer${mobileOpen ? ' is-open' : ''}`}>
         <div className="mobile-drawer__links">
-          <a href="#journey" className="mobile-drawer__link" onClick={(e) => { e.preventDefault(); scrollTo('journey') }}>THE JOURNEY</a>
-          <a href="#what-next" className="mobile-drawer__link" onClick={(e) => { e.preventDefault(); scrollTo('what-next') }}>WHAT NEXT</a>
-          <a href="#people" className="mobile-drawer__link" onClick={(e) => { e.preventDefault(); scrollTo('people') }}>THE PEOPLE</a>
-          <a href="#join" className="mobile-drawer__link mobile-drawer__link--highlight" onClick={(e) => { e.preventDefault(); scrollTo('join') }}>
+          <a
+            href="#journey"
+            className={`mobile-drawer__link ${activeSection === 'journey' ? 'mobile-drawer__link--active' : ''}`}
+            onClick={(e) => { e.preventDefault(); scrollTo('journey') }}
+          >
+            THE JOURNEY
+          </a>
+          <a
+            href="#what-next"
+            className={`mobile-drawer__link ${activeSection === 'what-next' ? 'mobile-drawer__link--active' : ''}`}
+            onClick={(e) => { e.preventDefault(); scrollTo('what-next') }}
+          >
+            WHAT NEXT
+          </a>
+          <a
+            href="#people"
+            className={`mobile-drawer__link ${activeSection === 'people' ? 'mobile-drawer__link--active' : ''}`}
+            onClick={(e) => { e.preventDefault(); scrollTo('people') }}
+          >
+            THE PEOPLE
+          </a>
+          <a
+            href="#join"
+            className={`mobile-drawer__link mobile-drawer__link--highlight ${activeSection === 'join' ? 'mobile-drawer__link--active-highlight' : ''}`}
+            onClick={(e) => { e.preventDefault(); scrollTo('join') }}
+          >
             JOIN THE CLUB ↗
           </a>
         </div>
@@ -1086,6 +1188,46 @@ function WhatNextSection() {
   )
 }
 
+// ─── Component: Interactive Member Card with Cursor Movement Animation ──────
+interface InteractiveMemberCardProps {
+  className?: string
+  children: React.ReactNode
+}
+
+function InteractiveMemberCard({ className = '', children }: InteractiveMemberCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current
+    if (!card) return
+    const rect = card.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    card.style.setProperty('--mouse-x', `${x}px`)
+    card.style.setProperty('--mouse-y', `${y}px`)
+  }
+
+  const handleMouseLeave = () => {
+    const card = cardRef.current
+    if (!card) return
+    card.style.removeProperty('--mouse-x')
+    card.style.removeProperty('--mouse-y')
+  }
+
+  return (
+    <div
+      ref={cardRef}
+      className={`bento-card interactive-member-card ${className}`}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className="member-card__spotlight" aria-hidden="true" />
+      <div className="member-card__corner-leaf" aria-hidden="true">🍃</div>
+      {children}
+    </div>
+  )
+}
+
 // ─── Component: Leadership & Team Bento ───────────────────────────────────────
 function LeadershipSection() {
   return (
@@ -1110,29 +1252,29 @@ function LeadershipSection() {
         <div className="bento-section">
           <h3 className="bento-tier-title">🏛️ Institution &amp; Faculty Administration</h3>
           <div className="bento-grid bento-grid--admin">
-            <div className="bento-card bento-card--admin">
+            <InteractiveMemberCard className="bento-card--admin">
               <div className="bento-card__avatar-badge">Dean</div>
               <div className="bento-card__role">Dean - Student Affairs</div>
               <h4 className="bento-card__name">Dr. P. R. Malasane</h4>
               <p className="bento-card__desc">Sipna College of Engineering &amp; Technology, Amravati</p>
-            </div>
+            </InteractiveMemberCard>
 
-            <div className="bento-card bento-card--admin">
+            <InteractiveMemberCard className="bento-card--admin">
               <div className="bento-card__avatar-badge">Advisor &amp; Incharge</div>
               <div className="bento-card__role">Faculty Advisor &amp; Club Incharge</div>
               <h4 className="bento-card__name">Prof. Sanjivani Harne</h4>
               <p className="bento-card__desc">Faculty Advisor &amp; Nature Club Incharge · Department of Applied Sciences &amp; Environmental Studies, SCOET</p>
-            </div>
+            </InteractiveMemberCard>
           </div>
         </div>
 
-        {/* Core Committee 2025-26 */}
+        {/* Core Committee 2026-27 */}
         <div className="bento-section">
           <h3 className="bento-tier-title">🌿 Nature Club Core Committee 2026-27</h3>
 
           {/* Top Leaders Row: President & Vice President highlighted in Green on top */}
           <div className="bento-grid bento-grid--presidents">
-            <div className="bento-card bento-card--president bento-card--has-avatar">
+            <InteractiveMemberCard className="bento-card--president bento-card--has-avatar">
               <div className="bento-card__avatar-wrap">
                 <img src="/club-assets/aditya-rathod.png" alt="Aditya Rathod" className="bento-card__avatar-img" />
               </div>
@@ -1141,9 +1283,9 @@ function LeadershipSection() {
                 <h4 className="bento-card__name">Aditya Rathod</h4>
                 <p className="bento-card__desc">Head of Club Strategy &amp; Environmental Outreach</p>
               </div>
-            </div>
+            </InteractiveMemberCard>
 
-            <div className="bento-card bento-card--president bento-card--has-avatar">
+            <InteractiveMemberCard className="bento-card--president bento-card--has-avatar">
               <div className="bento-card__avatar-wrap">
                 <img src="/club-assets/krutika-bonde.png" alt="Krutika Bonde" className="bento-card__avatar-img" />
               </div>
@@ -1152,46 +1294,46 @@ function LeadershipSection() {
                 <h4 className="bento-card__name">Krutika Bonde</h4>
                 <p className="bento-card__desc">Operations &amp; Student Drive Logistics</p>
               </div>
-            </div>
+            </InteractiveMemberCard>
           </div>
 
           {/* Other Members Below */}
           <div className="bento-grid bento-grid--core-members">
-            <div className="bento-card bento-card--slot">
+            <InteractiveMemberCard className="bento-card--slot">
               <div className="bento-card__role-tag slot-tag">Secretary</div>
               <h4 className="bento-card__name">Tanvi Rane</h4>
               <p className="bento-card__desc">Documentation, Liaison &amp; Event Coordination</p>
-            </div>
+            </InteractiveMemberCard>
 
-            <div className="bento-card bento-card--slot">
+            <InteractiveMemberCard className="bento-card--slot">
               <div className="bento-card__role-tag slot-tag">Treasurer</div>
               <h4 className="bento-card__name">Swaraj Ingole</h4>
               <p className="bento-card__desc">Finance &amp; Resource Allocation</p>
-            </div>
+            </InteractiveMemberCard>
 
-            <div className="bento-card bento-card--slot">
+            <InteractiveMemberCard className="bento-card--slot">
               <div className="bento-card__role-tag slot-tag">Technical Head</div>
               <h4 className="bento-card__name">Sarthak Kulkarni</h4>
               <p className="bento-card__desc">Web, Digital Platforms &amp; Tech Operations</p>
-            </div>
+            </InteractiveMemberCard>
 
-            <div className="bento-card bento-card--slot">
+            <InteractiveMemberCard className="bento-card--slot">
               <div className="bento-card__role-tag slot-tag">Public Relations Officer (PRO)</div>
               <h4 className="bento-card__name">Ayush Zode</h4>
               <p className="bento-card__desc">Media, Design &amp; Digital Communications</p>
-            </div>
+            </InteractiveMemberCard>
 
-            <div className="bento-card bento-card--slot">
+            <InteractiveMemberCard className="bento-card--slot">
               <div className="bento-card__role-tag slot-tag">Executive Member</div>
               <h4 className="bento-card__name">Kirkiti Chaudhari</h4>
               <p className="bento-card__desc">Field Operations, Hackathons &amp; Event Logistics</p>
-            </div>
+            </InteractiveMemberCard>
 
-            <div className="bento-card bento-card--slot">
+            <InteractiveMemberCard className="bento-card--slot">
               <div className="bento-card__role-tag slot-tag">Executive Member</div>
               <h4 className="bento-card__name">Sahil Markar</h4>
               <p className="bento-card__desc">On-ground Taskforce &amp; Plantation Drives</p>
-            </div>
+            </InteractiveMemberCard>
           </div>
         </div>
       </div>
@@ -1259,12 +1401,53 @@ function QRModal({ isOpen, onClose }: QRModalProps) {
 function JoinSection() {
   const [copied, setCopied] = useState(false)
   const [qrZoomed, setQrZoomed] = useState(false)
+  const [clickedSocial, setClickedSocial] = useState<string | null>(null)
 
   const copyEmail = () => {
-    navigator.clipboard.writeText('naturesclub@scoet.ac.in')
+    navigator.clipboard.writeText('sipnanaturesclub@gmail.com')
     setCopied(true)
     setTimeout(() => setCopied(false), 2500)
   }
+
+  const handleSocialClick = (key: string) => {
+    setClickedSocial(key)
+    setTimeout(() => setClickedSocial(null), 600)
+  }
+
+  const SOCIALS = [
+    {
+      key: 'instagram',
+      label: 'Instagram',
+      icon: '📸',
+      href: 'https://www.instagram.com/sipna_natures_club?igsh=Z2E3cXZtdG1zemhy',
+      color: '#e1306c',
+      glow: 'rgba(225,48,108,0.45)',
+    },
+    {
+      key: 'youtube',
+      label: 'YouTube',
+      icon: '▶',
+      href: 'https://youtube.com/@sipnanatureclub-amravati?si=imMTSjerLqC5AlDg',
+      color: '#ff0000',
+      glow: 'rgba(255,0,0,0.4)',
+    },
+    {
+      key: 'linkedin',
+      label: 'LinkedIn',
+      icon: '💼',
+      href: 'https://www.linkedin.com/in/sipna-nature-club-86923b220?utm_source=share_via&utm_content=profile&utm_medium=member_android',
+      color: '#0a66c2',
+      glow: 'rgba(10,102,194,0.45)',
+    },
+    {
+      key: 'email',
+      label: 'Gmail',
+      icon: '✉',
+      href: 'mailto:sipnanaturesclub@gmail.com',
+      color: '#00c853',
+      glow: 'rgba(0,200,83,0.45)',
+    },
+  ]
 
   return (
     <>
@@ -1283,6 +1466,27 @@ function JoinSection() {
                   Bring your questions, your energy, and your willingness to begin. The next good idea could start with you.
                 </p>
 
+                {/* Social Links with Animated Ripple */}
+                <div className="join-card__socials">
+                  {SOCIALS.map((s) => (
+                    <a
+                      key={s.key}
+                      href={s.href}
+                      target={s.key !== 'email' ? '_blank' : undefined}
+                      rel={s.key !== 'email' ? 'noreferrer' : undefined}
+                      className={`social-pill ${clickedSocial === s.key ? 'social-pill--clicked' : ''}`}
+                      style={{ '--social-color': s.color, '--social-glow': s.glow } as React.CSSProperties}
+                      onClick={() => handleSocialClick(s.key)}
+                      aria-label={`Follow us on ${s.label}`}
+                      title={s.label}
+                    >
+                      <span className="social-pill__icon">{s.icon}</span>
+                      <span className="social-pill__label">{s.label}</span>
+                      <span className="social-pill__ripple" />
+                    </a>
+                  ))}
+                </div>
+
                 <div className="join-card__actions">
                   <a
                     href="#hero"
@@ -1294,8 +1498,8 @@ function JoinSection() {
                   >
                     Back to the beginning ↗
                   </a>
-                  <button className="btn-pill btn-pill--ghost-cream" onClick={copyEmail}>
-                    {copied ? '✓ Email Copied!' : 'Copy Contact Email 📋'}
+                  <button className={`btn-pill btn-pill--ghost-cream ${copied ? 'btn-pill--copied' : ''}`} onClick={copyEmail}>
+                    {copied ? '✓ Email Copied!' : 'Copy Club Email 📋'}
                   </button>
                 </div>
               </div>
@@ -1368,11 +1572,13 @@ function JoinSection() {
               </div>
 
               <div className="site-footer__nav-group">
-                <div className="site-footer__nav-title">Contact &amp; Affiliation</div>
+                <div className="site-footer__nav-title">Contact &amp; Social</div>
                 <ul className="site-footer__links">
-                  <li><a href="mailto:naturesclub@scoet.ac.in">naturesclub@scoet.ac.in</a></li>
+                  <li><a href="mailto:sipnanaturesclub@gmail.com">sipnanaturesclub@gmail.com</a></li>
+                  <li><a href="https://www.instagram.com/sipna_natures_club?igsh=Z2E3cXZtdG1zemhy" target="_blank" rel="noreferrer">📸 Instagram</a></li>
+                  <li><a href="https://youtube.com/@sipnanatureclub-amravati?si=imMTSjerLqC5AlDg" target="_blank" rel="noreferrer">▶ YouTube</a></li>
+                  <li><a href="https://www.linkedin.com/in/sipna-nature-club-86923b220?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noreferrer">💼 LinkedIn</a></li>
                   <li><a href="https://sipnaengg.ac.in" target="_blank" rel="noreferrer">sipnaengg.ac.in</a></li>
-                  <li><span>Amravati, Maharashtra, India</span></li>
                 </ul>
               </div>
             </div>
@@ -1398,6 +1604,79 @@ export default function App() {
     event: PastEvent
     photoIndex: number
   } | null>(null)
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const [showBackToTop, setShowBackToTop] = useState(false)
+  const [activeSection, setActiveSection] = useState('home')
+
+  // Smooth Scroll Progress & Active Section Observer
+  useEffect(() => {
+    let ticking = false
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const totalHeight = document.documentElement.scrollHeight - window.innerHeight
+          const currentScroll = window.scrollY
+          const progress = totalHeight > 0 ? Math.min(Math.max(currentScroll / totalHeight, 0), 1) : 0
+
+          setScrollProgress(progress)
+          setShowBackToTop(currentScroll > 320)
+          ticking = false
+        })
+        ticking = true
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+
+    // IntersectionObserver for active navigation section
+    const sectionIds = ['home', 'journey', 'what-next', 'people', 'join']
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -55% 0px',
+      threshold: 0,
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id)
+        }
+      })
+    }, observerOptions)
+
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id)
+      if (el) observer.observe(el)
+    })
+
+    // Scroll reveal observer for elements
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed')
+          }
+        })
+      },
+      { rootMargin: '0px 0px -60px 0px', threshold: 0.1 }
+    )
+
+    const revealElements = document.querySelectorAll(
+      '.bento-card, .bento-section, .join-card, .section-header-grid, .photo-modal-card, .field-note-card'
+    )
+    revealElements.forEach((el) => {
+      el.classList.add('reveal-on-scroll')
+      revealObserver.observe(el)
+    })
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      observer.disconnect()
+      revealObserver.disconnect()
+    }
+  }, [])
 
   const handleOpenPhoto = (event: PastEvent, photoIndex: number) => {
     setActivePhoto({ event, photoIndex })
@@ -1429,7 +1708,12 @@ export default function App() {
 
   return (
     <div className="app-root">
-      <Navbar />
+      {/* Top Scroll Progress Indicator */}
+      <ScrollProgressBar progress={scrollProgress} />
+
+      {/* Sticky Glassmorphic Navbar with Active Section Spy */}
+      <Navbar activeSection={activeSection} />
+
       <main>
         <Hero />
         <JourneySection
@@ -1440,6 +1724,9 @@ export default function App() {
         <LeadershipSection />
         <JoinSection />
       </main>
+
+      {/* Floating Back to Top Button */}
+      <BackToTopButton visible={showBackToTop} progress={scrollProgress} />
 
       {/* Field Note Event Modal */}
       <EventModal
