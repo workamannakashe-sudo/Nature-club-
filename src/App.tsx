@@ -33,7 +33,7 @@ const PAST_EVENTS: PastEvent[] = [
     num: '01 / 10',
     title: 'VRIKSHA SANJIVANI',
     tag: 'Tree Revival & Distribution',
-    date: 'August 2025',
+    date: 'August 2026',
     shortDesc: 'A massive tree revival, botanical care, and sapling adoption drive across campus perimeters and local ecosystems.',
     successStory: 'Restored and distributed over 80+ indigenous saplings with organic soil conditioning and student adoption pledges.',
     photos: [
@@ -1325,7 +1325,7 @@ function LeadershipSection() {
 
             <InteractiveMemberCard className="bento-card--slot">
               <div className="bento-card__role-tag slot-tag">Executive Member</div>
-              <h4 className="bento-card__name">Kirkiti Chaudhari</h4>
+              <h4 className="bento-card__name">Kirti Chaudhari</h4>
               <p className="bento-card__desc">Field Operations, Hackathons &amp; Event Logistics</p>
             </InteractiveMemberCard>
 
@@ -1419,7 +1419,7 @@ function JoinSection() {
       key: 'instagram',
       label: 'Instagram',
       icon: '📸',
-      href: 'https://www.instagram.com/sipna_natures_club?igsh=Z2E3cXZtdG1zemhy',
+      href: 'https://www.instagram.com/sipnanatureclub/',
       color: '#e1306c',
       glow: 'rgba(225,48,108,0.45)',
     },
