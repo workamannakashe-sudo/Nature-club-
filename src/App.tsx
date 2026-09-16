@@ -1384,6 +1384,27 @@ function QRModal({ isOpen, onClose }: QRModalProps) {
           />
         </div>
 
+        {/* Direct Link Below Modal QR */}
+        <div className="qr-modal-direct-container">
+          <a
+            href="https://qrfy.io/aqRVwk1G64"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="qr-modal-direct-btn"
+          >
+            <span>Open Registration Form Directly</span>
+            <span className="qr-direct-link-arrow">↗</span>
+          </a>
+          <a
+            href="https://qrfy.io/aqRVwk1G64"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="qr-modal-direct-url"
+          >
+            https://qrfy.io/aqRVwk1G64
+          </a>
+        </div>
+
         <div className="qr-modal-footer">
           <div className="qr-modal-hint">
             <span className="pulse-dot" /> Official Membership Drive 2026-27
@@ -1506,34 +1527,60 @@ function JoinSection() {
 
               {/* Right: QR Code Scanner Card (Clickable to Expand) */}
               <div className="join-card__qr-side">
-                <div
-                  className="qr-frame qr-frame--interactive"
-                  onClick={() => setQrZoomed(true)}
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Click to enlarge QR code for scanning"
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setQrZoomed(true) }}
-                >
-                  <div className="qr-frame__scanner-line" />
-                  <div className="qr-frame__corner qr-frame__corner--tl" />
-                  <div className="qr-frame__corner qr-frame__corner--tr" />
-                  <div className="qr-frame__corner qr-frame__corner--bl" />
-                  <div className="qr-frame__corner qr-frame__corner--br" />
+                <div className="qr-card-wrapper">
+                  <div
+                    className="qr-frame qr-frame--interactive"
+                    onClick={() => setQrZoomed(true)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Click to enlarge QR code for scanning"
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setQrZoomed(true) }}
+                  >
+                    <div className="qr-frame__scanner-line" />
+                    <div className="qr-frame__corner qr-frame__corner--tl" />
+                    <div className="qr-frame__corner qr-frame__corner--tr" />
+                    <div className="qr-frame__corner qr-frame__corner--bl" />
+                    <div className="qr-frame__corner qr-frame__corner--br" />
 
-                  <div className="qr-frame__img-wrap">
-                    <img
-                      src="/club-assets/qr-code.png"
-                      alt="Natures Club Registration QR Code"
-                      className="qr-img"
-                    />
-                    <div className="qr-zoom-overlay">
-                      <span>🔍 Tap to expand</span>
+                    <div className="qr-frame__img-wrap">
+                      <img
+                        src="/club-assets/qr-code.png"
+                        alt="Natures Club Registration QR Code"
+                        className="qr-img"
+                      />
+                      <div className="qr-zoom-overlay">
+                        <span>🔍 Tap to expand</span>
+                      </div>
+                    </div>
+
+                    <div className="qr-frame__label">
+                      <strong>SCAN TO JOIN THE CLUB</strong>
+                      <span>Click to enlarge QR for easy scanning 🔍</span>
                     </div>
                   </div>
 
-                  <div className="qr-frame__label">
-                    <strong>SCAN TO JOIN THE CLUB</strong>
-                    <span>Click to enlarge QR for easy scanning 🔍</span>
+                  {/* Direct Link Below QR */}
+                  <div className="qr-direct-link-container">
+                    <a
+                      href="https://qrfy.io/aqRVwk1G64"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="qr-direct-link-btn"
+                      id="direct-registration-form-btn"
+                      aria-label="Directly open registration form in new tab"
+                    >
+                      <span className="qr-direct-link-icon">📝</span>
+                      <span className="qr-direct-link-text">Open Form Directly</span>
+                      <span className="qr-direct-link-arrow">↗</span>
+                    </a>
+                    <a
+                      href="https://qrfy.io/aqRVwk1G64"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="qr-direct-link-url"
+                    >
+                      https://qrfy.io/aqRVwk1G64
+                    </a>
                   </div>
                 </div>
               </div>
